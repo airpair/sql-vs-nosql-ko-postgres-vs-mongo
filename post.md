@@ -122,7 +122,7 @@ https://aphyr.com/posts/322-call-me-maybe-mongodb-stale-reads
 
 #### 2.2.1 Transactions in Postgres 
 
-Postgres does not require read locks since every transaction has a snapshot of the database. An inconsistent read (also known as a dirty read) is therefore impossible. Postgres has 3 levels of transaction isolation. For an in depth discussion, look at the documentation here:
+Postgres does not require read locks (except if transaction level is set to `Serializable`) since every transaction has a snapshot of the database. An inconsistent read (also known as a dirty read) is therefore impossible. Postgres has 3 levels of transaction isolation. For an in depth discussion, look at the documentation here:
 
 https://www.postgresql.org/docs/9.1/static/transaction-iso.html 
 
@@ -157,7 +157,7 @@ Keep in mind that this means you need to be able to encode an inverse, or rollba
 
 #### 2.2.2 Transactions in WiredTiger
 
-Wiredtiger purports to provide ACID transactions (I do not have sufficient computing power to put this to the test, and unfortunately third party tests have yet to occur). Taking the documentation at its word, it provides a maximum level of Snapshot Isolation, equivalent to Postgres' Read Committed. 
+Wiredtiger purports to provide ACID transactions (I do not have sufficient computing power to put this to the test, and unfortunately third party tests have yet to occur). Taking the documentation at its word, it provides a maximum level of Snapshot Isolation, equivalent to Postgres' `Read Committed`. 
 
 Winner: Postgres. By knockout. Although once WiredTiger is ready for primetime, this gap will narrow somewhat.
 
@@ -173,7 +173,7 @@ Postgres supports 4 column types for storing denormalized data.
 
 `jsonb`: This stores json as binary, and displays it as json, not as a single text value, and allows indexing into arbitrary attributes for speed of lookup. It does however still require a full update to write to, although there are functions coming out in 9.5 that will allow updates to nested paths more easily: https://michael.otacoo.com/postgresql-2/postgres-9-5-feature-highlight-new-jsonb-functions/ 
 
-'array`: This stores an array of some other datatype (text, number, whatever). To find out more about the operators available on all of these, the documentation is a great place to go: https://www.postgresql.org/docs/9.4/static/functions-json.html 
+`array`: This stores an array of some other datatype (text, number, whatever). To find out more about the operators available on all of these, the documentation is a great place to go: https://www.postgresql.org/docs/9.4/static/functions-json.html 
 
 #### 2.3.2 Denormalized data in Mongo 
 
