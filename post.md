@@ -60,10 +60,16 @@ This table fails the first condition (commonly referred to as first normal form 
 </thead>
 <tbody>
 <tr>
-<td> databases </td> <td> Edsger </td> <td> blue </td> <td> green </td>
-<td> programming </td> <td> Alan </td> <td> green </td> <td> purple </td>
-<td> algorithms </td> <td> Alan </td> <td> green </td> <td> purple </td>
-<td> algorithms </td> <td> Edsger </td> <td> blue </td> <td> green </td>
+  <td> databases </td> <td> Edsger </td> <td> blue </td> <td> green </td>
+</tr>
+<tr>
+  <td> programming </td> <td> Alan </td> <td> green </td> <td> purple </td>
+</tr>
+<tr>
+  <td> algorithms </td> <td> Alan </td> <td> green </td> <td> purple </td>
+</tr>
+<tr>
+  <td> algorithms </td> <td> Edsger </td> <td> blue </td> <td> green </td>
 </tr>
 </tbody>
 </table>
@@ -77,9 +83,9 @@ This fails the condition, since neither the specialty nor the name are sufficien
 </tr>
 </thead>
 <tbody>
-<tr> <td> databases </td> <td> Edsger </td> <td> Foobar LTD </td> <td> 1 Street </td></tr>
-<tr> <td> programming </td> <td> Alan </td> <td> Foobar LTD </td> <td> 2 Street </td></tr>
-<tr> <td> algorithms> </td> <td> Alan </td> <td> Fubar GMBH </td> <td> 3 Street </td></tr>
+<tr> <td> databases </td><td> Edsger</td><td> Foobar LTD </td> <td> 1 Street </td></tr>
+<tr><td> programming </td> <td> Alan </td> <td> Foobar LTD </td> <td> 2 Street </td></tr>
+<tr><td> algorithms> </td> <td> Alan </td> <td> Fubar GMBH </td> <td> 3 Street </td></tr>
 <tr> <td> algorithms </td> <td> Edsger </td> <td> Blue Corp </td> <td> 4 Street </td> </tr>
 </tbody>
 </table>
@@ -120,7 +126,7 @@ https://aphyr.com/posts/322-call-me-maybe-mongodb-stale-reads
 
 ### 2.2 Consistency and Transactions (Round 1): 
 
-#### 2.2.1 Transactions in Postgres 
+#### 2.2.1 Transactions and Durability in Postgres 
 
 Postgres does not require read locks (except if transaction level is set to `Serializable`) since every transaction has a snapshot of the database. An inconsistent read (also known as a dirty read) is therefore impossible. Postgres has 3 levels of transaction isolation. For an in depth discussion, look at the documentation here:
 
@@ -134,16 +140,16 @@ The final is `Serializable`. This transaction level guarantees that any transact
 
 A short (practical) example (taken from the above documentation) is a bank which allows you to overdraw any one of your account as long as the cumulative sum in all of your accounts is above the negative. A malicious attacker might attempt to exploit `Repeatable Read` by withdrawing large sums from all accounts concurrently. Since `Repeatable Read` gets a snapshot, each individual transaction will be successful, resulting in a large net loss to the bank. It is worthy of note here, that while a lot of work has been done to optimize the higher transaction levels, it is still true that the higher transaction levels come with some performance overhead. Whether or not the higher consistency is worth the performance cost, is something that should be evaluated on a case by case basis, using benchmarks on your data and operations. 
 
-#### 2.2.1 Transactions in MongoDb 
+#### 2.2.1 Transactions and Durability in MongoDb 
 
-MongoDB does not support transactions out of the box. It does however allow, configuration of its `Write Concern`, the "guarantee that MongoDB provides when reporting on the success of a write operation. The default is `Acknowledged`, which guarantees that the write operation has reached the database, but *does not* guarantee that the data has actually been written to disk. Other options are: 
+MongoDB does not support transactions out of the box. It does however allow, configuration of its `Write Concern`, which while not related to transactions, does speak to the durability of write operations. The default is `Acknowledged`, which guarantees that the write operation has reached the database, but *does not* guarantee that the data has actually been written to disk. Other options are: 
 
 `Journaled`: the write request has been written to MongoDB's Journal (A queue of operations that has not yet been persisted to the disk proper) 
 
 `Majority`: The write has propagated to the majority of nodes, and been acknowledged by them. A lengthy discussion of the various failures of MongoDB's write concerns can be found here:
 https://aphyr.com/posts/322-call-me-maybe-mongodb-stale-reads 
 
-The short version is that while `Majority` does ensure consistency in the absence of network partitions, network partitioning may result in inconsistent data, and/or data loss, even within the confines of a single document. It is also true that MongoDB does provide an `$isolated` operator, which, while enforcing consistency by way of a write lock, also prevents all sharding, and does not actually guarantee atomicity as an error during the write operation does not roll back the entire "transaction". MongoDB also does provide a loose guideline for implementing a two phase commit:
+While `Majority` does ensure consistency in the absence of network partitions, network partitioning may result in inconsistent data, and/or data loss, even within the confines of a single document. It is also true that MongoDB does provide an `$isolated` operator, which, while enforcing consistency by way of a write lock, also prevents all sharding, and does not actually guarantee atomicity as an error during the write operation does not roll back the entire "transaction". MongoDB also does provide a loose guideline for implementing a two phase commit:
 
 https://docs.mongodb.org/manual/tutorial/perform-two-phase-commits/ 
 
@@ -154,6 +160,9 @@ If any change fails, roll back every change already made, and cancel the transac
 Mark the transaction done.
 
 Keep in mind that this means you need to be able to encode an inverse, or rollback operation for every operation, and that this is a very hard problem to get right, a full solution for which is out of scope of this article.
+It also means that:
+1) Your transactions is provided client side, rather than by mongodb itself
+2) There is no global lock across all shards, which means that documents can be modified mid transaction. 
 
 #### 2.2.2 Transactions in WiredTiger
 
@@ -177,18 +186,19 @@ Postgres supports 4 column types for storing denormalized data.
 
 #### 2.3.2 Denormalized data in Mongo 
 
-Storing Json is literally the only thing Mongo does. Mongo stores its data in a binary format called BSON, which is (roughly) just a binary representation of a superset of JSON. The reason for the roughly quantifier is the lack of a number type, while the reason for superset is the support for direct binary data. A pretty good place to learn more is the documentation: http://docs.mongodb.org/manual/reference/mongodb-extended-json/ 
+Storing Json is what Mongo is optimized to do. Mongo stores its data in a binary format called BSON, which is (roughly) just a binary representation of a superset of JSON. The reason for the roughly quantifier is the lack of a number type, while the reason for superset is the support for direct binary data. A pretty good place to learn more is the documentation: http://docs.mongodb.org/manual/reference/mongodb-extended-json/ 
 
 #### 2.3.3 BSON VS JsonB 
 
-So how do our contenders perform? The first thing an astute reader will notice, is the similarity between jsonb and BSON, both are a json structure stored as binary internally. SHow do they differ? The first point of difference is that JsonB will output fully standards compliant Json, as described by http://rfc7159.net/rfc7159, while BSON has never gone through any formal peer review. This is, however a double edged sword. For example, JsonB does not support a native binary type unlike BSON, nor, more pertinently a date type. Whether you require more complex types to be explicitly type checked in your Json Store, or value the inherent strict standards compliance of a peer review process, is honestly a decision only you can make based on the business problems you are attempting to solve.
+So how do our contenders perform? The first thing an astute reader will notice, is the similarity between JSONB and BSON, both are a json structure stored as binary internally. SHow do they differ? The first point of difference is that JSONB will output fully standards compliant JSON, as described by http://rfc7159.net/rfc7159, while BSON has does not. 
+This is, however a double edged sword. For example, JSONB does not support a native binary type unlike BSON, nor, more pertinently a date type.
 
 #### 2.3.4 Performance Comparison 
 
 As demonstrated here: Postgres is faster, uses less memory on disk, and is all around more performant for JSON storage and reads then Mongo. https://www.enterprisedb.com/postgres-plus-edb-blog/marc-linster/postgres-outperforms-mongodb-and-ushers-new-developer-reality 
 
 Winner: Postgres. By technical Victory. Postgres is faster, less memory intensive, and more standards compliant then MongoDB. However, if you require some of the intrinsic type checking of BSON, and this type checking must be done in a denormalized manner, rather then by table columns, or if your need to do complex access updates on a JSON attribute, Mongo ekes out a victory. 
-Once Postgres 9.5 ships this becomes a knockout. 
+Once Postgres 9.5 ships, the latter seized to be a concern. 
 
 ### 2.4 Complex Model Relations, Access Patterns, and Normalized Data 
 
