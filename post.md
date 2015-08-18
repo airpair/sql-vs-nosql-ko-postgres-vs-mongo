@@ -10,7 +10,7 @@ In this chapter we will talk about the theoretical background necessary for a se
 
 ### 1.1 The CAP theorem. 
 
-Any serious discussion of databases will include at least passing reference to the CAP theorem. The CAP theorem states that a networked shared-data system can have at most two of the following three guarantees: Consistency (at any given point, every node sees the same data, and the data is up to date) Availability (every request is correctly notified by every node), Partition Tolerance (The system functions irrespective of network partitioning). This theorem is further used to loosely classify databases into three families, CA, CP, and AP. To represent database systems that fulfill two of these criteria. CA systems are patently impossible, as the introduction of even a single networked client renders the system partitioned. Any vendor selling a CA system is lying outright. CP systems will, in the presence of a partition, choose to serve only consistent data. If data consistency can not be ensured, they will refuse to service the request. AP systems will, in the presence of a partition, continue responding, but will make no guarantees of the consistency of the response. 
+Any serious discussion of databases will include at least passing reference to the CAP theorem. The CAP theorem states that a networked shared-data system can have at most two of the following three guarantees: consistency (at any given point, every node sees the same data, and the data is up to date) availability (every request is correctly notified by every node), partition tolerance (The system functions irrespective of network partitioning). This theorem is further used to loosely classify databases into three families, CA, CP, and AP. To represent database systems that fulfill two of these criteria. CA systems are patently impossible, as the introduction of even a single networked client renders the system partitioned. Any vendor selling a CA system is lying outright. CP systems will, in the presence of a partition, choose to serve only consistent data. If data consistency can not be ensured, they will refuse to service the request. AP systems will, in the presence of a partition, continue responding, but will make no guarantees of the consistency of the response. 
 
 ### 1.2 Transactions 
 
@@ -18,11 +18,7 @@ A database transaction is a representation of a single unit of work against the 
 
 #### 1.2.1 ACID Transactions 
 
-ACID stands for: Atomic(Everything in the transaction is part of a single 'atom'. Either everything succeeds or everything fails.) Consistent(Both the starting and finishing state of the transaction are valid and do not violate any database rules) Isolated(Transactions are isolated from each other and can not interfere with each other) Durable(All completed transactions persist permanently). An important observation here, is that the Consistency in ACID is different from the Consistency in CAP. Specifically, the scope of the ACID transaction's Consistency is fundamentally limited to the node being committed to, while the Consistency in CAP represents the entire partitioned database. The Consistency in CAP is in fact a much stronger guarantee, and is commonly referred to as linearizability. 
-
-#### 1.2.2 BASE transactions 
-
-Basically Available Soft State Eventually Consistent This is effectively an availability guarantee, with an additional implication that eventually, if left alone a system that falls under BASE will return a consistent value. However, there is no indication as to the length of time implied by "eventually", nor any guarantee whatsoever as to the values returned before any conflicts are resolved. In general tools that can not provide ACID will claim to provide BASE. 
+ACID stands for: atomic(Everything in the transaction is part of a single 'atom'. Either everything succeeds or everything fails.) consistent(Both the starting and finishing state of the transaction are valid and do not violate any database rules) isolated(Transactions are isolated from each other and can not interfere with each other) durable(All completed transactions persist permanently). The consistency in CAP is in fact a much stronger guarantee, and is commonly referred to as linearizability. 
 
 #### 1.3 Linearizability 
 
@@ -30,7 +26,7 @@ The real meaning of the C in CAP. Informally, the guarantee is that once an oper
 
 #### 1.4 Normalization 
 
-Wikipedia defines normalization as "the process of organizing the attributes and tables of a relational database to minimize data redundancy." This is honestly a pretty good definition. There are many normalization strategies, but a database is usually considered normalized if it is in third normal form (3NF). What this means is the following: 
+Wikipedia defines normalization as "the process of organizing the attributes and tables of a relational database to minimize data redundancy." There are many normalization strategies, but a database is usually considered normalized if it is in third normal form (3NF). What this means is the following: 
 
 1. Each attribute contains only atomic values. This explicitly rules out complex JSON or array structures stored at the leaf node. 
 
@@ -88,7 +84,7 @@ This fails the condition, since neither the specialty nor the name are sufficien
 </tbody>
 </table>
 
-This table shows us which companies the experts have worked at and in which capacity, however the addresses refer to the company rather then the expert or their specialty, this violates 3NF. Put simply, this can be remembered as "Everything must provide a fact about the key, the whole key, and nothing but the key, so help me Codd". (Codd being the scientist who coined these forms.) Now at this point a very reasonable question to ask might be "Why is this useful?" and "How does this apply in practice". In short, by normalizing data, we ensure that data is not duplicated, we ensure that the Postgres Query optimizer can make the best possible decisions (the exact algorithm for this is outside the scope of this article), and we also ensure that we don't have corrupted data anywhere in our system (due to abandoned join tables for example). 
+This table shows us which companies the experts have worked at and in which capacity, however the addresses refer to the company rather then the expert or their specialty, this violates 3NF. Put simply, this can be remembered as "Everything must provide a fact about the key, the whole key, and nothing but the key, so help me Codd". (Codd being the scientist who coined these forms.) Now at this point a very reasonable question to ask might be "Why is this useful?" and "How does this apply in practice". In short, by normalizing data, we ensure that data is not duplicated, we ensure that the Postgres query optimizer can make the best possible decisions (the exact algorithm for this is outside the scope of this article), and we also ensure that we don't have corrupted data anywhere in our system (due to abandoned join tables for example). 
 
 #### 1.5 Relational Databases (RDBMS) 
 
@@ -105,7 +101,7 @@ Wikipedia defines a database index as:
 
 https://en.wikipedia.org/wiki/Database_index 
 
-This is honestly a great definition. More loosely speaking, a database index is a way for a database to keep track of the values of a particular column or attribute, thus making said column or attribute much faster to read or search for, but slower to write to. 
+More loosely speaking, a database index is a way for a database to keep track of the values of a particular column or attribute, thus making said column or attribute much faster to read or search for, but slower to write to. 
 
 ## 2. The Fight 
 
@@ -147,17 +143,23 @@ MongoDB does not support transactions out of the box. It does however allow, con
 `Majority`: The write has propagated to the majority of nodes, and been acknowledged by them. A lengthy discussion of the various failures of MongoDB's write concerns can be found here:
 https://aphyr.com/posts/322-call-me-maybe-mongodb-stale-reads 
 
-The short version is that while `Majority` does ensure consistency in the absence of network partitions, network partitioning may result in inconsistent data, and/or data loss, even within the confines of a single document. It is also true that MongoDB does provide an `$isolated` operator, this prevents all sharding, and does not actually guarantee atomicity. MongoDB also does provide a loose guideline for implementing a two phase commit:
+The short version is that while `Majority` does ensure consistency in the absence of network partitions, network partitioning may result in inconsistent data, and/or data loss, even within the confines of a single document. It is also true that MongoDB does provide an `$isolated` operator, which, while enforcing consistency by way of a write lock, also prevents all sharding, and does not actually guarantee atomicity as an error during the write operation does not roll back the entire "transaction". MongoDB also does provide a loose guideline for implementing a two phase commit:
 
 https://docs.mongodb.org/manual/tutorial/perform-two-phase-commits/ 
 
-So if you're up for reinventing a transaction system from the ground up at the application layer, without any of the consistency guarantees provided by the vendor.... 
+Loosely speaking this will require you to:
+Create a transaction with all of your queued changes.
+Execute each change, sequentially, tracking the succeeded changes.
+If any change fails, roll back every change already made, and cancel the transaction.
+Mark the transaction done.
+
+Keep in mind that this means you need to be able to encode an inverse, or rollback operation for every operation, and that this is a very hard problem to get right, a full solution for which is out of scope of this article.
 
 #### 2.2.2 Transactions in WiredTiger
 
 Wiredtiger purports to provide ACID transactions (I do not have sufficient computing power to put this to the test, and unfortunately third party tests have yet to occur). Taking the documentation at its word, it provides a maximum level of Snapshot Isolation, equivalent to Postgres' Read Committed. 
 
-Winner: Postgres. By knockout. Although once WiredTiger is ready for primetime (say Mongo v3.4 or so), this gap will narrow somewhat.
+Winner: Postgres. By knockout. Although once WiredTiger is ready for primetime, this gap will narrow somewhat.
 
 ### 2.3 Performance and Denormalized Data 
 
