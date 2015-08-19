@@ -205,29 +205,34 @@ Once Postgres 9.5 ships, the latter seized to be a concern.
 #### 2.4.1 Normalized Data in Postgres 
 
 This is more or less what postgres does. It allows you to encode data relationships into tables, using foreign keys to encode relationships between tables. It allows you to join between tables to pull in data from across table boundaries. For example: 
-```PLpgSQL 
+```sql 
 CREATE TABLE USERS( id SERIAL PRIMARY KEY, organization_id INTEGER, name TEXT ); 
 CREATE TABLE ORGANIZATIONS( id SERIAL PRIMARY KEY, name TEXT ); 
 ``` 
 Now to select we can either: 
-```PLpgSQL 
+```sql 
 SELECT USERS.* FROM USERS, ORGANIZATIONS WHERE USERS.organization_id = ORGANIZATIONS.id AND ORGANIZATIONS.name LIKE '%bar%'; 
 ``` 
 Or 
-```PLpgSQL 
+```sql 
 SELECT USERS.* FROM USERS INNER JOIN ORGANIZATIONS ON USERS.organization_id = ORGANIZATIONS.id WHERE ORGANIZATIONS.name LIKE '%bar%'; 
 ```
 http://sqlfiddle.com/#!15/b5f9e/2 
 
 #### 2.4.2 Normalized Data in MongoDB 
-Loosely speaking Mongo collections map to Postgres tables, while Mongo Documents map to Postgres Rows. It is important to note that MongoDB does not support Joins, forcing you to query for nested relationships directly if you choose to store either a direct key id or a DBRef, or letting you fetch directly from the nested object. While storing a nested object like so: ```Javascript 
+Loosely speaking Mongo collections map to Postgres tables, while Mongo Documents map to Postgres Rows. It is important to note that MongoDB does not support Joins, forcing you to query for nested relationships directly if you choose to store either a direct key id or a DBRef, or letting you fetch directly from the nested object. While storing a nested object like so: 
+
+```javascript 
 db.createCollection('users'); 
 db.users.insert({name: 'jack', organization: {name: 'foo corp'}}); 
 ``` 
+
 Is a trivial solution, it is also denormalized, and from a business logic point of view, presumes that organization has no life, independently of user. What if this isn't true, or you would like to have normalized data? MongoDB allows two ways to achieve this: 
+
 1) DBRefs allow you to embed direct references to other documents in your documents. However, this will force additional queries to be run every time to fetch your referenced documents, and should (as per MongoDB's documentation) be avoided when possible 
+
 2) 
-```Javascript 
+```javascript 
 db.createCollection('users'); 
 db.createCollection('organizations'); 
 db.organizations.insert({name: 'foo corp'}); 
@@ -235,6 +240,7 @@ db.organizations.insert({name: 'bar corp'});
 var foo = db.organizations.find({name: 'foo corp'}); 
 db.users.insert({name: "Jack", organization_id: foo}); 
 ``` 
+
 You can then use application level logic to extract the organization_id, fetch that organization separately, and join the data in the application. Note that, this bypasses any transaction logic you have built or use, unless your transaction logic is handled at the application level. Winner: Postgres By knockout. 
 
 ### 2.5 Scaling 
