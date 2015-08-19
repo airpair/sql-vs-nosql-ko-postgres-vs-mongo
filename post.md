@@ -190,7 +190,7 @@ Storing Json is what Mongo is optimized to do. Mongo stores its data in a binary
 
 #### 2.3.3 BSON VS JsonB 
 
-So how do our contenders perform? The first thing an astute reader will notice, is the similarity between JSONB and BSON, both are a json structure stored as binary internally. SHow do they differ? The first point of difference is that JSONB will output fully standards compliant JSON, as described by http://rfc7159.net/rfc7159, while BSON has does not. 
+So how do our contenders perform? The first thing an astute reader will notice, is the similarity between JSONB and BSON, both are a json structure stored as binary internally. How do they differ? The first point of difference is that JSONB will output fully standards compliant JSON, as described by http://rfc7159.net/rfc7159, while BSON has does not. 
 This is, however a double edged sword. For example, JSONB does not support a native binary type unlike BSON, nor, more pertinently a date type.
 
 #### 2.3.4 Performance Comparison 
