@@ -190,7 +190,7 @@ Storing Json is what Mongo is optimized to do. Mongo stores its data in a binary
 
 #### 2.3.3 BSON VS JsonB 
 
-So how do our contenders perform? The first thing an astute reader will notice, is the similarity between JSONB and BSON, both are a json structure stored as binary internally. SHow do they differ? The first point of difference is that JSONB will output fully standards compliant JSON, as described by http://rfc7159.net/rfc7159, while BSON has does not. 
+So how do our contenders perform? The first thing an astute reader will notice, is the similarity between JSONB and BSON, both are a json structure stored as binary internally. How do they differ? The first point of difference is that JSONB will output fully standards compliant JSON, as described by http://rfc7159.net/rfc7159, while BSON has does not. 
 This is, however a double edged sword. For example, JSONB does not support a native binary type unlike BSON, nor, more pertinently a date type.
 
 #### 2.3.4 Performance Comparison 
@@ -205,29 +205,34 @@ Once Postgres 9.5 ships, the latter seized to be a concern.
 #### 2.4.1 Normalized Data in Postgres 
 
 This is more or less what postgres does. It allows you to encode data relationships into tables, using foreign keys to encode relationships between tables. It allows you to join between tables to pull in data from across table boundaries. For example: 
-```PLpgSQL 
+```sql 
 CREATE TABLE USERS( id SERIAL PRIMARY KEY, organization_id INTEGER, name TEXT ); 
 CREATE TABLE ORGANIZATIONS( id SERIAL PRIMARY KEY, name TEXT ); 
 ``` 
 Now to select we can either: 
-```PLpgSQL 
+```sql 
 SELECT USERS.* FROM USERS, ORGANIZATIONS WHERE USERS.organization_id = ORGANIZATIONS.id AND ORGANIZATIONS.name LIKE '%bar%'; 
 ``` 
 Or 
-```PLpgSQL 
+```sql 
 SELECT USERS.* FROM USERS INNER JOIN ORGANIZATIONS ON USERS.organization_id = ORGANIZATIONS.id WHERE ORGANIZATIONS.name LIKE '%bar%'; 
 ```
 http://sqlfiddle.com/#!15/b5f9e/2 
 
 #### 2.4.2 Normalized Data in MongoDB 
-Loosely speaking Mongo collections map to Postgres tables, while Mongo Documents map to Postgres Rows. It is important to note that MongoDB does not support Joins, forcing you to query for nested relationships directly if you choose to store either a direct key id or a DBRef, or letting you fetch directly from the nested object. While storing a nested object like so: ```Javascript 
+Loosely speaking Mongo collections map to Postgres tables, while Mongo Documents map to Postgres Rows. It is important to note that MongoDB does not support Joins, forcing you to query for nested relationships directly if you choose to store either a direct key id or a DBRef, or letting you fetch directly from the nested object. While storing a nested object like so: 
+
+```javascript 
 db.createCollection('users'); 
 db.users.insert({name: 'jack', organization: {name: 'foo corp'}}); 
 ``` 
+
 Is a trivial solution, it is also denormalized, and from a business logic point of view, presumes that organization has no life, independently of user. What if this isn't true, or you would like to have normalized data? MongoDB allows two ways to achieve this: 
+
 1) DBRefs allow you to embed direct references to other documents in your documents. However, this will force additional queries to be run every time to fetch your referenced documents, and should (as per MongoDB's documentation) be avoided when possible 
+
 2) 
-```Javascript 
+```javascript 
 db.createCollection('users'); 
 db.createCollection('organizations'); 
 db.organizations.insert({name: 'foo corp'}); 
@@ -235,6 +240,7 @@ db.organizations.insert({name: 'bar corp'});
 var foo = db.organizations.find({name: 'foo corp'}); 
 db.users.insert({name: "Jack", organization_id: foo}); 
 ``` 
+
 You can then use application level logic to extract the organization_id, fetch that organization separately, and join the data in the application. Note that, this bypasses any transaction logic you have built or use, unless your transaction logic is handled at the application level. Winner: Postgres By knockout. 
 
 ### 2.5 Scaling 
@@ -252,14 +258,16 @@ Winner: MongoDB. Technical Victory due to native sharding support and ease.
 
 ### 2.6 Rapid Prototyping 
 
-So, you have investors breathing down your neck, and you owe a prototype yesterday. What technology do you choose for your data store? While Postgres seems to be the clear victor above, there are a few advantages to using Mongo: 
-1) As the store is schema-less, as your requirements rapidly change you do not need to continuously write migrations 
-2) You do not need to think through your data-model, ensuring normalization. 
-3) You do not need to write SQL, as The query language is JSON like, and will feel very familiar to anybody with Javascript experience. 
-4) It is probably fair to say that at this early juncture a lot of your data is of suboptimal importance, and your organization can survive its loss or corruption, thus the strong guarantees provided by Postgres are not necessary.
+So, you have investors breathing down your neck, and you owe a prototype yesterday. What technology do you choose for your data store? While Postgres seems to be the clear victor above, there are a few advantages to using Mongo:
+
+1. As the store is schema-less, as your requirements rapidly change you do not need to continuously write migrations 
+1. You do not need to think through your data-model, ensuring normalization. 
+1. You do not need to write SQL, as The query language is JSON like, and will feel very familiar to anybody with Javascript experience. 
+1. It is probably fair to say that at this early juncture a lot of your data is of suboptimal importance, and your organization can survive its loss or corruption, thus the strong guarantees provided by Postgres are not necessary.
+
 The downside: All data is equally likely to be lost. If your organization deals with enterprise customers, or handles financial data, MongoDB is very simply not an option (http://hackingdistributed.com/2014/04/06/another-one-bites-the-dust-flexcoin/). Additionally, while it is true that MongoDB is easier to scale down the road, Postgres is also scalable (if its good enough for Instagram....). 
 
-Victor: MongoDB, Technical Victory. Assuming you do not already have postgres and/or database expertise, MongoDB's simpler query interface and lack of requirements for schema migration/maintenance make it easier to rapidly prototype in. Just be aware that unless you fit a small set of niche use cases where individual, small scale dataloss is truly irrelevant (running large scale analytics on normally distributed datasets), you will eventually have to throw your database away and rewrite swathes of your application. 
+Victory: MongoDB, Technical Victory. Assuming you do not already have postgres and/or database expertise, MongoDB's simpler query interface and lack of requirements for schema migration/maintenance make it easier to rapidly prototype in. Just be aware that unless you fit a small set of niche use cases where individual, small scale dataloss is truly irrelevant (running large scale analytics on normally distributed datasets), you will eventually have to throw your database away and rewrite swathes of your application. 
 
 ## 3. Summary 
 Postgres comes out the clear victor of this fight. There are valid use cases for MongoDB such as reporting on large datasets of normally distributed data, and storing TRULY denormalized data, data where relationships are mostly non existent, and documents are large, mostly unstructured, and with little to no overlap. However as a general purpose database, Postgres is clearly the dominant fighter in this arena, and if some denormalized data is required, like say a set of optional parameters on a user (eye color, height, weight, hair color), Postgres' JSONB column is more than sufficient.
