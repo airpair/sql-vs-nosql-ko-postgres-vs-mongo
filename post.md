@@ -258,11 +258,13 @@ Winner: MongoDB. Technical Victory due to native sharding support and ease.
 
 ### 2.6 Rapid Prototyping 
 
-So, you have investors breathing down your neck, and you owe a prototype yesterday. What technology do you choose for your data store? While Postgres seems to be the clear victor above, there are a few advantages to using Mongo: 
-1) As the store is schema-less, as your requirements rapidly change you do not need to continuously write migrations 
-2) You do not need to think through your data-model, ensuring normalization. 
-3) You do not need to write SQL, as The query language is JSON like, and will feel very familiar to anybody with Javascript experience. 
-4) It is probably fair to say that at this early juncture a lot of your data is of suboptimal importance, and your organization can survive its loss or corruption, thus the strong guarantees provided by Postgres are not necessary.
+So, you have investors breathing down your neck, and you owe a prototype yesterday. What technology do you choose for your data store? While Postgres seems to be the clear victor above, there are a few advantages to using Mongo:
+
+1. As the store is schema-less, as your requirements rapidly change you do not need to continuously write migrations 
+1. You do not need to think through your data-model, ensuring normalization. 
+1. You do not need to write SQL, as The query language is JSON like, and will feel very familiar to anybody with Javascript experience. 
+1. It is probably fair to say that at this early juncture a lot of your data is of suboptimal importance, and your organization can survive its loss or corruption, thus the strong guarantees provided by Postgres are not necessary.
+
 The downside: All data is equally likely to be lost. If your organization deals with enterprise customers, or handles financial data, MongoDB is very simply not an option (http://hackingdistributed.com/2014/04/06/another-one-bites-the-dust-flexcoin/). Additionally, while it is true that MongoDB is easier to scale down the road, Postgres is also scalable (if its good enough for Instagram....). 
 
 Victor: MongoDB, Technical Victory. Assuming you do not already have postgres and/or database expertise, MongoDB's simpler query interface and lack of requirements for schema migration/maintenance make it easier to rapidly prototype in. Just be aware that unless you fit a small set of niche use cases where individual, small scale dataloss is truly irrelevant (running large scale analytics on normally distributed datasets), you will eventually have to throw your database away and rewrite swathes of your application. 
