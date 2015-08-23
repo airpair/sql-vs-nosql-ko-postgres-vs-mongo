@@ -104,9 +104,7 @@ Are designed to store what is known as semi-structured data, data where there is
 #### 1.7 Indexing 
 
 Wikipedia defines a database index as: 
->A database index is a data structure that improves the speed of data retrieval operations on a database table at the cost of additional writes and storage space to maintain the index data structure.`
-
-https://en.wikipedia.org/wiki/Database_index 
+>A database index is a data structure that improves the speed of data retrieval operations on a database table at the cost of additional writes and storage space to maintain the index data structure.<sup>[Database Index](https://en.wikipedia.org/wiki/Database_index) Database Indexes on Wikipedia</sup>
 
 More loosely speaking, a database index is a way for a database to keep track of the values of a particular column or attribute, thus making said column or attribute much faster to read or search for, but slower to write to. 
 
@@ -116,28 +114,23 @@ More loosely speaking, a database index is a way for a database to keep track of
 
 #### 2.1.1 Classification of Postgres (in the right corner). 
 
-Postgres is an RDBMS with ACID compliant transactions, up-to and including full serializability of transactions if the transaction level is set to be `Serializable`. Its Query language is a flavor of `SQL`, and it is CP, as is demonstrated here: 
-https://aphyr.com/posts/282-call-me-maybe-postgres. 
+Postgres is an RDBMS with ACID compliant transactions, up-to and including full serializability of transactions if the transaction level is set to be `Serializable`. Its Query language is a flavor of `SQL`, and it is CP, as is demonstrated here<sup>[Postgres CAP analysis](https://aphyr.com/posts/282-call-me-maybe-postgres)</sup>
 
 #### 2.1.2 Classification of MongoDB (in the left corner) 
 
-MongoDB is a multi storage engine beast. The default storage engine is MMAP, though WiredTiger is a newly released storage engine that purports to address some of the more systemic flaws. However as evidenced by the large number of bugs related to both data loss and memory leakage, it is clearly not yet ready for prime time. As such, while improvements purported by WiredTiger will be called out and analyzed where possible, the contender in the left corner is MMAP. MongoDB is a schema-less, document oriented DBMS with JSON like objects forming the model. It does not support transactions out of the box. It is not AP because it is a single-master system, and all reads to to the primary node (although this can be ameliorated with Replica Sets and automatic failover, whereby a new primary is selected on network partition). If the primary node is down, It is also not CP as its consistency claims are disproven here:
-
-https://aphyr.com/posts/322-call-me-maybe-mongodb-stale-reads 
+MongoDB is a multi storage engine beast. The default storage engine is MMAP, though WiredTiger is a newly released storage engine that purports to address some of the more systemic flaws. However as evidenced by the large number of bugs related to both data loss and memory leakage, it is clearly not yet ready for prime time. As such, while improvements purported by WiredTiger will be called out and analyzed where possible, the contender in the left corner is MMAP. MongoDB is a schema-less, document oriented DBMS with JSON like objects forming the model. It does not support transactions out of the box. It is not AP because it is a single-master system, and all reads to to the primary node (although this can be ameliorated with Replica Sets and automatic failover, whereby a new primary is selected on network partition). If the primary node is down, It is also not CP as its consistency claims are disproven here<sup>[Mongo CAP analysis](https://aphyr.com/posts/322-call-me-maybe-mongodb-stale-reads)</sup>
 
 ### 2.2 Consistency and Transactions (Round 1): 
 
 #### 2.2.1 Transactions and Durability in Postgres 
 
-Postgres does not require read locks (except if transaction level is set to `Serializable`) since every transaction has a snapshot of the database. An inconsistent read (also known as a dirty read) is therefore impossible. Postgres has 3 levels of transaction isolation. For an in depth discussion, look at the documentation here:
-
-https://www.postgresql.org/docs/9.1/static/transaction-iso.html 
+Postgres does not require read locks (except if transaction level is set to `Serializable`) since every transaction has a snapshot of the database. An inconsistent read (also known as a dirty read) is therefore impossible. Postgres has 3 levels of transaction isolation. For an in depth discussion, look at the documentation<sup>[Transaction Isolation Levels](https://www.postgresql.org/docs/9.1/static/transaction-iso.html) in the Postgres Docs</sup>.
 
 The first is `Read committed`. This is the default. What this means is that each query within the transaction only sees data that had already been committed to the database when that query began. No changes made during the execution of the query will be visible, however concurrent changes that are written during between queries by other transactions *will* leak into the transaction. 
 
 The second is `Repeatable Read`. This transaction level guarantees that no changes made by concurrent transactions during the transaction execution will be visible. In effect, the transactions changes are applied onto a snapshot independently of other transactions. If a transaction fails due to a different transaction having modified data the transaction will fail with a concurrency exception, and the application you are writing will have to retry the transaction. 
 
-The final is `Serializable`. This transaction level guarantees that any transactions executed concurrently will have the exact same effect as if they had been executed one after the other. While this may appear on the surface to be very similar to `Repeatable Read` there is a great explanation of the difference here: https://wiki.postgresql.org/wiki/SSI 
+The final is `Serializable`. This transaction level guarantees that any transactions executed concurrently will have the exact same effect as if they had been executed one after the other. While this may appear on the surface to be very similar to `Repeatable Read` there is a great explanation of the difference here<sup>[SSI](https://wiki.postgresql.org/wiki/SSI) in the Postgres Wiki</sup>.  
 
 A short (practical) example (taken from the above documentation) is a bank which allows you to overdraw any one of your account as long as the cumulative sum in all of your accounts is above the negative. A malicious attacker might attempt to exploit `Repeatable Read` by withdrawing large sums from all accounts concurrently. Since `Repeatable Read` gets a snapshot, each individual transaction will be successful, resulting in a large net loss to the bank. It is worthy of note here, that while a lot of work has been done to optimize the higher transaction levels, it is still true that the higher transaction levels come with some performance overhead. Whether or not the higher consistency is worth the performance cost, is something that should be evaluated on a case by case basis, using benchmarks on your data and operations. 
 
@@ -147,12 +140,9 @@ MongoDB does not support transactions out of the box. It does however allow, con
 
 `Journaled`: the write request has been written to MongoDB's Journal (A queue of operations that has not yet been persisted to the disk proper) 
 
-`Majority`: The write has propagated to the majority of nodes, and been acknowledged by them. A lengthy discussion of the various failures of MongoDB's write concerns can be found here:
-https://aphyr.com/posts/322-call-me-maybe-mongodb-stale-reads 
+`Majority`: The write has propagated to the majority of nodes, and been acknowledged by them.
 
-While `Majority` does ensure consistency in the absence of network partitions, network partitioning may result in inconsistent data, and/or data loss, even within the confines of a single document. It is also true that MongoDB does provide an `$isolated` operator, which, while enforcing consistency by way of a write lock, also prevents all sharding, and does not actually guarantee atomicity as an error during the write operation does not roll back the entire "transaction". MongoDB also does provide a loose guideline for implementing a two phase commit:
-
-https://docs.mongodb.org/manual/tutorial/perform-two-phase-commits/ 
+While `Majority` does ensure consistency in the absence of network partitions, network partitioning may result in inconsistent data, and/or data loss, even within the confines of a single document. It is also true that MongoDB does provide an `$isolated` operator, which, while enforcing consistency by way of a write lock, also prevents all sharding, and does not actually guarantee atomicity as an error during the write operation does not roll back the entire "transaction". MongoDB also does provide a loose guideline for implementing a two phase commit<sup>[Two Phase Commit](https://docs.mongodb.org/manual/tutorial/perform-two-phase-commits/) in the Mongo Docs</sup>.
 
 Loosely speaking this will require you to:
 Create a transaction with all of your queued changes.
@@ -181,22 +171,22 @@ Postgres supports 4 column types for storing denormalized data.
 
 `json`: this stores json blobs converted to a string. It does run some validations to ensure well formed json, and provide convenience operators for access, but that's about it. It does not really provide indexing on This is also largely only for legacy use. 
 
-`jsonb`: This stores json as binary, and displays it as json, not as a single text value, and allows indexing into arbitrary attributes for speed of lookup. It does however still require a full update to write to, although there are functions coming out in 9.5 that will allow updates to nested paths more easily: https://michael.otacoo.com/postgresql-2/postgres-9-5-feature-highlight-new-jsonb-functions/ 
+`jsonb`: This stores json as binary, and displays it as json, not as a single text value, and allows indexing into arbitrary attributes for speed of lookup. It does however still require a full update to write to, although there are functions coming out in 9.5 that will allow updates to nested paths more easily<sup>[Postgres 9.5 Preview](https://michael.otacoo.com/postgresql-2/postgres-9-5-feature-highlight-new-jsonb-functions/)</sup>.
 
-`array`: This stores an array of some other datatype (text, number, whatever). To find out more about the operators available on all of these, the documentation is a great place to go: https://www.postgresql.org/docs/9.4/static/functions-json.html 
+`array`: This stores an array of some other datatype (text, number, whatever). To find out more about the operators available on all of these, the documentation is a great place to go<sup>[JSON in Postgres](https://www.postgresql.org/docs/9.4/static/functions-json.html)</sup>. 
 
 #### 2.3.2 Denormalized data in Mongo 
 
-Storing Json is what Mongo is optimized to do. Mongo stores its data in a binary format called BSON, which is (roughly) just a binary representation of a superset of JSON. The reason for the roughly quantifier is the lack of a number type, while the reason for superset is the support for direct binary data. A pretty good place to learn more is the documentation: http://docs.mongodb.org/manual/reference/mongodb-extended-json/ 
+Storing Json is what Mongo is optimized to do. Mongo stores its data in a binary format called BSON, which is (roughly) just a binary representation of a superset of JSON. The reason for the roughly quantifier is the lack of a number type, while the reason for superset is the support for direct binary data.
 
 #### 2.3.3 BSON VS JsonB 
 
-So how do our contenders perform? The first thing an astute reader will notice, is the similarity between JSONB and BSON, both are a json structure stored as binary internally. How do they differ? The first point of difference is that JSONB will output fully standards compliant JSON, as described by http://rfc7159.net/rfc7159, while BSON has does not. 
+So how do our contenders perform? The first thing an astute reader will notice, is the similarity between JSONB and BSON, both are a json structure stored as binary internally. How do they differ? The first point of difference is that JSONB will output fully standards compliant JSON, as described by the RFC<sup>[JSON RFC](http://rfc7159.net/rfc7159)</sup>, while BSON has does not. 
 This is, however a double edged sword. For example, JSONB does not support a native binary type unlike BSON, nor, more pertinently a date type.
 
 #### 2.3.4 Performance Comparison 
 
-As demonstrated here: Postgres is faster, uses less memory on disk, and is all around more performant for JSON storage and reads then Mongo. https://www.enterprisedb.com/postgres-plus-edb-blog/marc-linster/postgres-outperforms-mongodb-and-ushers-new-developer-reality 
+As demonstrated here: Postgres is faster, uses less memory on disk, and is all around more performant for JSON storage and reads then Mongo.<sup>[Mongo vs Postgres](https://www.enterprisedb.com/postgres-plus-edb-blog/marc-linster/postgres-outperforms-mongodb-and-ushers-new-developer-reality) performance comparison</sup>
 
 Winner: Postgres. By technical Victory. Postgres is faster, less memory intensive, and more standards compliant then MongoDB. However, if you require some of the intrinsic type checking of BSON, and this type checking must be done in a denormalized manner, rather then by table columns, or if your need to do complex access updates on a JSON attribute, Mongo ekes out a victory. 
 Once Postgres 9.5 ships, the latter seized to be a concern. 
@@ -205,7 +195,7 @@ Once Postgres 9.5 ships, the latter seized to be a concern.
 
 #### 2.4.1 Normalized Data in Postgres 
 
-This is more or less what postgres does. It allows you to encode data relationships into tables, using foreign keys to encode relationships between tables. It allows you to join between tables to pull in data from across table boundaries. For example: 
+This is more or less what postgres does. It allows you to encode data relationships into tables, using foreign keys to encode relationships between tables. It allows you to join between tables to pull in data from across table boundaries<sup>[SQL Snippet](http://sqlfiddle.com/#!15/b5f9e/2)</sup>. For example: 
 ```sql 
 CREATE TABLE USERS( id SERIAL PRIMARY KEY, organization_id INTEGER, name TEXT ); 
 CREATE TABLE ORGANIZATIONS( id SERIAL PRIMARY KEY, name TEXT ); 
@@ -218,7 +208,6 @@ Or
 ```sql 
 SELECT USERS.* FROM USERS INNER JOIN ORGANIZATIONS ON USERS.organization_id = ORGANIZATIONS.id WHERE ORGANIZATIONS.name LIKE '%bar%'; 
 ```
-http://sqlfiddle.com/#!15/b5f9e/2 
 
 #### 2.4.2 Normalized Data in MongoDB 
 Loosely speaking Mongo collections map to Postgres tables, while Mongo Documents map to Postgres Rows. It is important to note that MongoDB does not support Joins, forcing you to query for nested relationships directly if you choose to store either a direct key id or a DBRef, or letting you fetch directly from the nested object. While storing a nested object like so: 
@@ -249,11 +238,11 @@ You can then use application level logic to extract the organization_id, fetch t
 There are fundamentally two types of scaling, horizontal scale, and vertical scale. Vertical scaling loosely means adding resources to a given machine. More RAM, more CPU cores. Horizontal Scale means multiple machines running your database. 
 
 #### 2.5.1 Scaling Postgres 
-As long as you can maintain Vertical Scale, Postgres scaling is trivial. You add more power to your machine, bump up the resources allocated to Postgres, and you're off to the races. But sooner or later this will hit a ceiling. Scaling Postgres Horizontally is significantly harder, but doable. There are several valid strategies to achieve this. At the core these are replication for reads (a master machine that allows writes, and multiple read only machines), and sharding. Sharding is a complex topic with multiple solutions, from application level load balancing, down to database level logic to store the shardid as part of the primary key as done at instagram: http://instagram-engineering.tumblr.com/post/10853187575/sharding-ids-at-instagram A detailed discussion of the approaches is out of scope of this article.
+As long as you can maintain Vertical Scale, Postgres scaling is trivial. You add more power to your machine, bump up the resources allocated to Postgres, and you're off to the races. But sooner or later this will hit a ceiling. Scaling Postgres Horizontally is significantly harder, but doable. There are several valid strategies to achieve this. At the core these are replication for reads (a master machine that allows writes, and multiple read only machines), and sharding. Sharding is a complex topic with multiple solutions, from application level load balancing, down to database level logic to store the shardid as part of the primary key as done at instagram<sup>[Instagram Postgres Sharding](http://instagram-engineering.tumblr.com/post/10853187575/sharding-ids-at-instagram).</sup> A detailed discussion of the approaches is out of scope of this article.
 
 #### 2.5.2 Scaling Mongo 
 
-MongoDB Supports Sharding at the technology level. When sharded, collections are partitioned by a `shard key`. Mongo's `query routers` can then identify the right shard to read from. A great resource to achieve good sharding, complete with best practices for balancing shard sizes, can be found here: http://docs.mongodb.org/master/MongoDB-sharding-guide.pdf 
+MongoDB Supports Sharding at the technology level. When sharded, collections are partitioned by a `shard key`. Mongo's `query routers` can then identify the right shard to read from. A great resource to achieve good sharding, complete with best practices for balancing shard sizes, can be found in the documentation<sup>[Sharding Mongo](http://docs.mongodb.org/master/MongoDB-sharding-guide.pdf)</sup>
 
 Winner: MongoDB. Technical Victory due to native sharding support and ease. 
 
@@ -266,7 +255,7 @@ So, you have investors breathing down your neck, and you owe a prototype yesterd
 1. You do not need to write SQL, as The query language is JSON like, and will feel very familiar to anybody with Javascript experience. 
 1. It is probably fair to say that at this early juncture a lot of your data is of suboptimal importance, and your organization can survive its loss or corruption, thus the strong guarantees provided by Postgres are not necessary.
 
-The downside: All data is equally likely to be lost. If your organization deals with enterprise customers, or handles financial data, MongoDB is very simply not an option (http://hackingdistributed.com/2014/04/06/another-one-bites-the-dust-flexcoin/). Additionally, while it is true that MongoDB is easier to scale down the road, Postgres is also scalable (if its good enough for Instagram....). 
+The downside: All data is equally likely to be lost. If your organization deals with enterprise customers, or handles financial data, MongoDB is very simply not an option<sup>[Mongo Security for Banking](http://hackingdistributed.com/2014/04/06/another-one-bites-the-dust-flexcoin/)</sup>. Additionally, while it is true that MongoDB is easier to scale down the road, Postgres is also scalable (if its good enough for Instagram....). 
 
 Victory: MongoDB, Technical Victory. Assuming you do not already have postgres and/or database expertise, MongoDB's simpler query interface and lack of requirements for schema migration/maintenance make it easier to rapidly prototype in. Just be aware that unless you fit a small set of niche use cases where individual, small scale dataloss is truly irrelevant (running large scale analytics on normally distributed datasets), you will eventually have to throw your database away and rewrite swathes of your application. 
 
