@@ -34,7 +34,7 @@ Wikipedia defines normalization as "the process of organizing the attributes and
 
 3. No data is dependent on anything other then the key. Some examples: Let's take the following simplistic table: 
 
-<table>
+><table>
   <thead>
     <tr>
       <th> dob</th> <th> name </th> <th> attributes </th>
@@ -50,9 +50,10 @@ Wikipedia defines normalization as "the process of organizing the attributes and
   </tbody>
 </table>
 
+
 This table fails the first condition (commonly referred to as first normal form or 1NF), as the attributes column is non atomic, e.g. represents multiple pieces of information per value. Now lets take a table that passes that criteria but fails the second (commonly referred to as second normal form or 2NF). 
 
-<table>
+><table>
 <thead>
 <tr>
 <th> specialty </th><th>name</th><th>eye_color</th><th>hair_color</th>
@@ -76,7 +77,7 @@ This table fails the first condition (commonly referred to as first normal form 
 
 This fails the condition, since neither the specialty nor the name are sufficient to uniquely identify a row, however the eye and hair color depend *only* on the name, thus leading to duplication of information. Finally lets take a look at the following table: 
 
-<table>
+><table>
 <thead>
 <tr>
 <th> specialty </th> <th> name </th> <th> company_worked_at </th> <th> company_address </th>
