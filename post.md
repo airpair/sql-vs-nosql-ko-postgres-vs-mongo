@@ -233,6 +233,10 @@ db.users.insert({name: "Jack", organization_id: foo});
 
 You can then use application level logic to extract the organization_id, fetch that organization separately, and join the data in the application. Note that, this bypasses any transaction logic you have built or use, unless your transaction logic is handled at the application level. Winner: Postgres By knockout. 
 
+#### 2.4.3 Performance Comparison
+MongoDB also provides an aggregation framework that lets users mimic many of the JOIN functioanlities of the Relational world. A good (albeit somewhat biased in writing style) performance comparison is provided here<sup>[NBA Data](http://tapoueh.org/blog/2014/02/17-aggregating-nba-data-PostgreSQL-vs-MongoDB)</sup>. TL;DR; Postgres is about three times faster at joins and aggregation than Mongo. Additionally, the MongoDB aggregation Pipeline can only handle a single collection.
+An important note here, is that this benchmark only really applies to a one machine database. 
+
 ### 2.5 Scaling 
 
 There are fundamentally two types of scaling, horizontal scale, and vertical scale. Vertical scaling loosely means adding resources to a given machine. More RAM, more CPU cores. Horizontal Scale means multiple machines running your database. 
@@ -244,7 +248,7 @@ As long as you can maintain Vertical Scale, Postgres scaling is trivial. You add
 
 MongoDB Supports Sharding at the technology level. When sharded, collections are partitioned by a `shard key`. Mongo's `query routers` can then identify the right shard to read from. A great resource to achieve good sharding, complete with best practices for balancing shard sizes, can be found in the documentation<sup>[Sharding Mongo](http://docs.mongodb.org/master/MongoDB-sharding-guide.pdf)</sup>
 
-Winner: MongoDB. Technical Victory due to native sharding support and ease. 
+Winner: MongoDB. Technical Victory due to native sharding support and ease.
 
 ### 2.6 Rapid Prototyping 
 
@@ -260,4 +264,4 @@ The downside: All data is equally likely to be lost. If your organization deals 
 Victory: MongoDB, Technical Victory. Assuming you do not already have postgres and/or database expertise, MongoDB's simpler query interface and lack of requirements for schema migration/maintenance make it easier to rapidly prototype in. Just be aware that unless you fit a small set of niche use cases where individual, small scale dataloss is truly irrelevant (running large scale analytics on normally distributed datasets), you will eventually have to throw your database away and rewrite swathes of your application. 
 
 ## 3. Summary 
-Postgres comes out the clear victor of this fight. There are valid use cases for MongoDB such as reporting on large datasets of normally distributed data, and storing TRULY denormalized data, data where relationships are mostly non existent, and documents are large, mostly unstructured, and with little to no overlap. However as a general purpose database, Postgres is clearly the dominant fighter in this arena, and if some denormalized data is required, like say a set of optional parameters on a user (eye color, height, weight, hair color), Postgres' JSONB column is more than sufficient.
+Postgres comes out the clear victor of this fight. There are valid use cases for MongoDB such as reporting on and aggregating large datasets of normally distributed data, and storing TRULY denormalized data, data where relationships are mostly non existent, documents are large, mostly unstructured, and with little to no overlap, while data loss is largely irrelevant (Log Parsing and Caching come to mind). However as a general purpose database, Postgres is clearly the dominant fighter in this arena, and if some denormalized data is required, like say a set of optional parameters on a user (eye color, height, weight, hair color), Postgres' JSONB column is more than sufficient.
