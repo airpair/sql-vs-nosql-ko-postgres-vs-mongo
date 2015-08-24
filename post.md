@@ -37,7 +37,7 @@ Wikipedia defines normalization as "the process of organizing the attributes and
 ><table>
   <thead>
     <tr>
-      <th> dob</th> <th> name </th> <th> attributes </th>
+      <th> dob &nbsp;</th> <th> name  &nbsp;</th> <th> attributes </th>
     </tr>
   </thead>
   <tbody>
@@ -56,7 +56,7 @@ This table fails the first condition (commonly referred to as first normal form 
 ><table>
 <thead>
 <tr>
-<th> specialty </th><th>name</th><th>eye_color</th><th>hair_color</th>
+<th> specialty  &nbsp;</th><th>name &nbsp;</th><th>eye_color &nbsp;</th><th>hair_color</th>
 </tr>
 </thead>
 <tbody>
@@ -80,7 +80,7 @@ This fails the condition, since neither the specialty nor the name are sufficien
 ><table>
 <thead>
 <tr>
-<th> specialty </th> <th> name </th> <th> company_worked_at </th> <th> company_address </th>
+<th> specialty  &nbsp;</th> <th> name  &nbsp;</th> <th> company_worked_at  &nbsp;</th> <th> company_address </th>
 </tr>
 </thead>
 <tbody>
