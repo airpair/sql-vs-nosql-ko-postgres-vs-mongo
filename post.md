@@ -42,10 +42,10 @@ Wikipedia defines normalization as "the process of organizing the attributes and
   </thead>
   <tbody>
     <tr>
-      <td> 1/1/1936 </td><td> Edsger </td> <td>{hair: blue, eyes: green} </td>
+      <td> 1/1/1936  &nbsp;</td><td> Edsger  &nbsp;</td> <td>{hair: blue, eyes: green} </td>
     </tr>
     <tr>
-      <td> 2/2/1937 </td><td> Alan </td><td> {hair: green, eyes: purple} </td>
+      <td> 2/2/1937  &nbsp;</td><td> Alan  &nbsp;</td><td> {hair: green, eyes: purple} </td>
     </tr>
   </tbody>
 </table>
@@ -61,16 +61,16 @@ This table fails the first condition (commonly referred to as first normal form 
 </thead>
 <tbody>
 <tr>
-  <td> databases </td> <td> Edsger </td> <td> blue </td> <td> green </td>
+  <td> databases  &nbsp;</td> <td> Edsger  &nbsp;</td> <td> blue  &nbsp;</td> <td> green </td>
 </tr>
 <tr>
-  <td> programming </td> <td> Alan </td> <td> green </td> <td> purple </td>
+  <td> programming  &nbsp;</td> <td> Alan  &nbsp;</td> <td> green  &nbsp;</td> <td> purple </td>
 </tr>
 <tr>
-  <td> algorithms </td> <td> Alan </td> <td> green </td> <td> purple </td>
+  <td> algorithms  &nbsp;</td> <td> Alan  &nbsp;</td> <td> green  &nbsp;</td> <td> purple </td>
 </tr>
 <tr>
-  <td> algorithms </td> <td> Edsger </td> <td> blue </td> <td> green </td>
+  <td> algorithms  &nbsp;</td> <td> Edsger  &nbsp;</td> <td> blue  &nbsp;</td> <td> green </td>
 </tr>
 </tbody>
 </table>
@@ -84,10 +84,10 @@ This fails the condition, since neither the specialty nor the name are sufficien
 </tr>
 </thead>
 <tbody>
-<tr> <td> databases </td><td> Edsger</td><td> Foobar LTD </td> <td> 1 Street </td></tr>
-<tr><td> programming </td> <td> Alan </td> <td> Foobar LTD </td> <td> 2 Street </td></tr>
-<tr><td> algorithms> </td> <td> Alan </td> <td> Fubar GMBH </td> <td> 3 Street </td></tr>
-<tr> <td> algorithms </td> <td> Edsger </td> <td> Blue Corp </td> <td> 4 Street </td> </tr>
+<tr> <td> databases  &nbsp;</td><td> Edsger &nbsp;</td><td> Foobar LTD  &nbsp;</td> <td> 1 Street </td></tr>
+<tr><td> programming  &nbsp;</td> <td> Alan  &nbsp;</td> <td> Foobar LTD  &nbsp;</td> <td> 2 Street </td></tr>
+<tr><td> algorithms>  &nbsp;</td> <td> Alan  &nbsp;</td> <td> Fubar GMBH  &nbsp;</td> <td> 3 Street </td></tr>
+<tr> <td> algorithms  &nbsp;</td> <td> Edsger  &nbsp;</td> <td> Blue Corp  &nbsp;</td> <td> 4 Street </td> </tr>
 </tbody>
 </table>
 
